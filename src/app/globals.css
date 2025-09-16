@@ -51,8 +51,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+   --primary: oklch(0.771 0.179 70.08); /* Updated primary color to #F6A730 */
+  --primary-foreground: oklch(0.145 0 0); /* Changed to dark for contrast */
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -76,6 +76,7 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --golden-dark: #5f3d05; /* dark brown */
 }
 
 .dark {
@@ -85,8 +86,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.771 0.179 70.08); /* Updated primary color for dark mode to match light mode for consistency */
+  --primary-foreground: oklch(0.145 0 0); /* Changed to dark for contrast */
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -110,6 +111,7 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --golden-dark: #5f3d05; /* dark brown */
 }
 
 @layer base {
@@ -118,5 +120,19 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .bg-kyve-hero {
+    background-image: url("/bg.png"); /* pulled from public/bg.png */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+   
+  /* Add this new utility class */
+  .text-golden-dark {
+    color: var(--golden-dark);
   }
 }
