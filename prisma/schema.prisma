@@ -1,0 +1,213 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Auth Models
+
+model Account {
+  id                 String   @id @default(uuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  verifiedUser  DateTime?
+  image         String?
+  password      String?
+  role          UserRole @default(USER)
+  apiKey       String   @unique @default(cuid())
+  isGuest      Boolean  @default(false)
+
+  // Escrow relations
+  createdEscrows Escrow[] @relation("CreatorEscrows")
+  buyerEscrows   Escrow[] @relation("BuyerEscrows")
+  sellerEscrows  Escrow[] @relation("SellerEscrows")
+
+  // Other relations
+  accounts        Account[]
+  transactions    Transaction[]
+  balance         Int @default(0)
+  isTwoFactorEnabled Boolean @default(false)
+  twoFactorConfirmation TwoFactorConfirmation?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+ 
+}
+
+model VerificationToken {
+  id      String   @id @default(uuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model PasswordResetToken {
+  id      String   @id @default(uuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model TwoFactorToken {
+  id      String   @id @default(uuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model TwoFactorConfirmation {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+}
+
+
+// Escrow Models
+
+enum EscrowSource {
+  INTERNAL   // created directly from your app
+  API        // created via external ecommerce API
+}
+
+enum EscrowInvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum EscrowStatus {
+  PENDING
+  RELEASED
+  CANCELLED
+}
+
+enum EscrowRole {
+  BUYER
+  SELLER
+}
+
+enum LogisticsOption {
+  NO
+  PICKUP
+  DELIVERY
+}
+
+enum Currency {
+  NGN
+  USD
+  GHS
+}
+
+model Escrow {
+  id        String           @id @default(uuid())
+  role      EscrowRole
+  logistics LogisticsOption
+  amount    Float
+  currency  Currency
+  status    EscrowStatus     @default(PENDING)
+  source    EscrowSource     @default(INTERNAL)
+
+  // Product details
+  productName   String
+  description   String?       // optional
+  photoUrl      String?       // optional (store CDN link or image URL)
+  color         String?       // optional (e.g., "Red", "Black", hex code, etc.)
+category  String?      // optional (e.g., "Electronics", "Fashion", etc.)
+  quantity      Int?          // optional (e.g., number of items)
+  // Invitation flow
+  invitedRole      EscrowRole?
+  invitationStatus EscrowInvitationStatus @default(PENDING)
+
+  // Creator (required)
+  creator   User   @relation("CreatorEscrows", fields: [creatorId], references: [id])
+  creatorId String
+
+  // Buyer (optional)
+  buyer   User?   @relation("BuyerEscrows", fields: [buyerId], references: [id])
+  buyerId String?
+
+  // Seller (optional)
+  seller   User?   @relation("SellerEscrows", fields: [sellerId], references: [id])
+  sellerId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([creatorId])
+  @@index([buyerId])
+  @@index([sellerId])
+}
+
+
+
+// Transaction Models
+enum TransactionType {
+  DEPOSIT
+  WITHDRAW
+  TRANSFER
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model Transaction {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  type      TransactionType
+  status    TransactionStatus @default(PENDING)
+  reference String            @unique
+  amount    Float
+  currency  Currency
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
