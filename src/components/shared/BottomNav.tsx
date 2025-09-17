@@ -6,6 +6,7 @@ import { SVGProps } from "react"
 import { cn } from "@/lib/utils"
 import { useQueryClient } from "@tanstack/react-query"
 import { prefetchDashboard, prefetchTransactions, prefetchProfile } from "@/lib/prefetch"
+import  getCurrentUser from "@/actions/getCurrentUser" 
 
 export const bottomNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: HomeIcon, prefetcher: prefetchDashboard },
@@ -14,9 +15,12 @@ export const bottomNavItems = [
   { href: "/dashboard/profile", label: "Profile", icon: UserIcon, prefetcher: prefetchProfile },
 ]
 
-export default function BottomNavBar() {
+export default async function BottomNavBar() {
   const pathname = usePathname()
   const qc = useQueryClient()
+  const user = await getCurrentUser()
+  if (!user) return null
+  const userId = user.id
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-14 w-full items-center justify-around bg-background shadow-[0_-2px_4px_rgba(0,0,0,0.1)] md:hidden">
@@ -27,8 +31,8 @@ export default function BottomNavBar() {
             key={href}
             href={href}
             prefetch={false}
-            onMouseEnter={() => prefetcher?.(qc)}
-            onTouchStart={() => prefetcher?.(qc)}
+            onMouseEnter={() => prefetcher?.(qc, userId)}
+            onTouchStart={() => prefetcher?.(qc, userId)}
             className={cn(
               "flex flex-col items-center justify-center gap-1 text-sm font-medium hover:text-primary focus:text-primary",
               isActive ? "text-primary" : "text-muted-foreground"
