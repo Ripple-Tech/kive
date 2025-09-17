@@ -4,28 +4,31 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { SVGProps } from "react"
 import { cn } from "@/lib/utils"
+import { useQueryClient } from "@tanstack/react-query"
+import { prefetchDashboard, prefetchTransactions, prefetchProfile } from "@/lib/prefetch"
 
-// Define bottom nav items
 export const bottomNavItems = [
-  { href: "/dashboard", label: "Dashboard", icon: HomeIcon },
-  { href: "/dashboard/escrow", label: "Escrow", icon: EscrowIcon },
-  { href: "/dashboard/transactions", label: "Transactions", icon: TransactionIcon },
-  { href: "/dashboard/profile", label: "Profile", icon: UserIcon },
-
+  { href: "/dashboard", label: "Dashboard", icon: HomeIcon, prefetcher: prefetchDashboard },
+  { href: "/dashboard/escrow", label: "Escrow", icon: EscrowIcon, prefetcher: prefetchDashboard },
+  { href: "/dashboard/transactions", label: "Transactions", icon: TransactionIcon, prefetcher: prefetchTransactions },
+  { href: "/dashboard/profile", label: "Profile", icon: UserIcon, prefetcher: prefetchProfile },
 ]
 
 export default function BottomNavBar() {
   const pathname = usePathname()
+  const qc = useQueryClient()
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-14 w-full items-center justify-around bg-background shadow-[0_-2px_4px_rgba(0,0,0,0.1)] md:hidden">
-      {bottomNavItems.map(({ href, label, icon: Icon }) => {
+      {bottomNavItems.map(({ href, label, icon: Icon, prefetcher }) => {
         const isActive = pathname === href
         return (
           <Link
             key={href}
             href={href}
             prefetch={false}
+            onMouseEnter={() => prefetcher?.(qc)}
+            onTouchStart={() => prefetcher?.(qc)}
             className={cn(
               "flex flex-col items-center justify-center gap-1 text-sm font-medium hover:text-primary focus:text-primary",
               isActive ? "text-primary" : "text-muted-foreground"
@@ -52,42 +55,18 @@ function HomeIcon(props: SVGProps<SVGSVGElement>) {
 
 function TransactionIcon(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      viewBox="0 0 24 24"
-    >
-      {/* Arrow pointing right */}
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
       <path d="M4 6h12l-3-3" />
       <path d="M16 6l-3 3" />
-
-      {/* Arrow pointing left */}
       <path d="M20 18H8l3 3" />
       <path d="M8 18l3-3" />
     </svg>
   )
 }
 
-
 function EscrowIcon(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg 
-      {...props} 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="24" 
-      height="24" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round"
-    >
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
