@@ -6,7 +6,7 @@ import { redirect } from "next/navigation"
 import getCurrentUser from "@/actions/getCurrentUser"
 import { EscrowGridClient } from "./escrow-grid.client"
 import { db } from "@/lib/db"
-
+export const dynamic = "force-dynamic"
 async function prefetchEscrows(qc: QueryClient, userId: string) {
   const escrows = await db.escrow.findMany({
     where: {

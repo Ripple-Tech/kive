@@ -2,14 +2,13 @@
 
 import { db } from "@/lib/db"
 import { QueryClient } from "@tanstack/react-query"
-import { fetchCurrentUser } from "@/lib/fetchCurrentUser" // <- use your new version
+import  getCurrentUser from "@/actions/getCurrentUser" // <- use your new version
 
-export async function prefetchDashboard(qc: QueryClient) {
-  const user = await fetchCurrentUser()
-  if (!user) return
-
+export async function prefetchDashboard(qc: QueryClient, userId: string) {
   const escrows = await db.escrow.findMany({
-    where: { OR: [{ creatorId: user.id }, { buyerId: user.id }, { sellerId: user.id }] },
+    where: {
+      OR: [{ creatorId: userId }, { buyerId: userId }, { sellerId: userId }],
+    },
     orderBy: { createdAt: "desc" },
     take: 20,
     include: {
@@ -18,11 +17,15 @@ export async function prefetchDashboard(qc: QueryClient) {
     },
   })
 
-  qc.setQueryData(["escrow.listMine", { limit: 20 }], { items: escrows, nextCursor: null })
+  qc.setQueryData(["escrow.listMine", { limit: 20 }], {
+    items: escrows,
+    nextCursor: null,
+  })
 }
 
+
 export async function prefetchTransactions(qc: QueryClient) {
-  const user = await fetchCurrentUser()
+  const user = await getCurrentUser()
   if (!user) return
 
   const txns = await db.transaction.findMany({
@@ -35,7 +38,7 @@ export async function prefetchTransactions(qc: QueryClient) {
 }
 
 export async function prefetchProfile(qc: QueryClient) {
-  const user = await fetchCurrentUser()
+  const user = await getCurrentUser()
   if (!user) return
 
   const profile = await db.user.findUnique({
