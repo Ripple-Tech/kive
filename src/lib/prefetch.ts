@@ -47,3 +47,20 @@ export async function prefetchProfile(qc: QueryClient) {
 
   qc.setQueryData(["profile", { userId: user.id }], profile)
 }
+
+// ✅ use the same key as client: ["escrow.byId", { id }]
+export async function prefetchEscrow(qc: QueryClient, id: string) {
+  const escrow = await db.escrow.findUnique({
+    where: { id },
+    include: {
+      buyer: { select: { id: true, name: true } },
+      seller: { select: { id: true, name: true } },
+      creator: { select: { id: true, name: true } },
+    },
+  })
+
+  if (escrow) {
+    // always store the raw escrow object
+    qc.setQueryData(["escrow.byId", { id }], escrow)
+  }
+}
