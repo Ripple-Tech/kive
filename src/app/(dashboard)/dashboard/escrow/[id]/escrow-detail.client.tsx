@@ -1,3 +1,4 @@
+// dashboard/escrow/[id]/escrow-detail.client.tsx
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -12,36 +13,38 @@ export function EscrowDetailClient({ id }: { id: string }) {
   const { data: session } = useSession()
   const currentUserId = session?.user?.id
 
-  // Ensure stable, non-empty id
+  // Ensure stable, non-empty id for first render
   const stableId = useMemo(() => id ?? "", [id])
+  if (!stableId) return <div>Invalid escrow id.</div>
 
   const {
     data: escrow,
     isLoading,
     isError,
     error,
+    refetch,
   } = useQuery({
-    queryKey: ["escrow.byId", stableId], // ✅ match server prefetch key
+    // ❗ EXACT same key as server prefetch / page.setQueryData
+    queryKey: ["escrow.byId", stableId],
+    // If cache exists (hydrated from server), queryFn will not run thanks to refetchOnMount:false
     queryFn: async () => {
+      // Extra guard: return cached immediately if present to avoid calling protected API
+      const cached = qc.getQueryData(["escrow.byId", stableId])
+      if (cached) return cached
+
+      // Fallback: call the hono client endpoint and parse response
       const res = await client.escrow.getById.$get({ id: stableId })
-      if (!res.ok) {
-        const err: any = new Error("Failed to fetch escrow")
-        err.status = res.status
-        try {
-          const body = await res.json()
-          if (body && typeof body === "object" && "message" in body) {
-            err.message = (body as { message?: string }).message || err.message
-          }
-        } catch {}
-        throw err
-      }
-      const payload = await res.json()
-      return payload.escrow
+      // client returns a Response-like object with .json overriden in baseClient; parse it
+      const payload = await (res as any).json()
+      // server returns { escrow: {...} }
+      return payload?.escrow ?? payload
     },
     enabled: Boolean(stableId),
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
+    staleTime: 30_000,               // keep cache "fresh" for 30s (no refetch on mount during that time)
+    refetchOnMount: false,          // don't force a refetch when component mounts (important for hydration)
+    refetchOnWindowFocus: false,    // avoid refetches when user tabs away/back
     retry: (failureCount, err: any) => {
+      // don't retry unauthorized/forbidden
       if (err?.status === 401 || err?.status === 403) return false
       return failureCount < 2
     },
@@ -52,29 +55,28 @@ export function EscrowDetailClient({ id }: { id: string }) {
   const accept = useMutation({
     mutationFn: async (vars: { escrowId: string }) => {
       const res = await client.escrow.acceptInvitation.$post(vars)
-      if (!res.ok) {
-        const err: any = new Error("Failed to accept invitation")
-        err.status = res.status
-        try {
-          const body = await res.json()
-          if (body && typeof body === "object" && "message" in body) {
-            err.message = (body as { message?: string }).message || err.message
-          }
-        } catch {}
-        throw err
-      }
-      return await res.json()
+      const payload = await (res as any).json()
+      return payload
     },
     onSuccess: async () => {
+      // reset fallback UI
       setShowMinimalAccept(false)
+
+      // invalidate matching keys (primitive id)
       await Promise.all([
-        qc.invalidateQueries({ queryKey: ["escrow.byId", stableId] }), // ✅ consistent key
+        qc.invalidateQueries({ queryKey: ["escrow.byId", stableId] }),
         qc.invalidateQueries({ queryKey: ["escrow.listMine"] }),
       ])
+
+      // optional: refetch detail immediately
+      refetch()
     },
   })
 
-  if (!stableId) return <div>Invalid escrow id.</div>
+  // if the server returned 403 we may want to show the minimal accept UI
+  if (isError && (error as any)?.status === 403) {
+    setShowMinimalAccept(true)
+  }
 
   if (showMinimalAccept) {
     return (
@@ -95,29 +97,21 @@ export function EscrowDetailClient({ id }: { id: string }) {
   }
 
   if (isLoading) return <div>Loading escrow…</div>
-  if (isError || !escrow) {
-    console.error("Escrow query error:", error)
-    return <div>Unable to load escrow.</div>
-  }
+  if (isError || !escrow) return <div>Unable to load escrow.</div>
 
   const isCreator = escrow.creatorId === currentUserId
   const isBuyer = escrow.buyerId === currentUserId
   const isSeller = escrow.sellerId === currentUserId
   const isParticipant = isCreator || isBuyer || isSeller
+
   const isComplete = Boolean(escrow.buyerId && escrow.sellerId)
 
   if (isComplete && !isParticipant) {
     return <EscrowCompleteEmptyState />
   }
 
-  const displayRole = isCreator
-    ? escrow.role
-    : escrow.role === "BUYER"
-    ? "SELLER"
-    : "BUYER"
-
-  const needsJoin =
-    !isParticipant && !isComplete && escrow.invitationStatus === "PENDING"
+  const displayRole = isCreator ? escrow.role : escrow.role === "BUYER" ? "SELLER" : "BUYER"
+  const needsJoin = !isParticipant && !isComplete && escrow.invitationStatus === "PENDING"
 
   return (
     <div className="space-y-4">

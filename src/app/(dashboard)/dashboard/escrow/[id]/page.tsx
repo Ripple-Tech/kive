@@ -1,3 +1,4 @@
+// app/(dashboard)/dashboard/escrow/[id]/page.tsx
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query"
 import { getQueryClient } from "@/lib/query-client"
@@ -6,23 +7,23 @@ import { db } from "@/lib/db"
 import { auth } from "@/auth"
 import { notFound, redirect } from "next/navigation"
 
-interface EscrowDetailPageProps {
-  // ✅ Prefer plain object
-  params: { id: string } | Promise<{ id: string }>
-}
-
-// If you must keep Promise in your project, ensure it always resolves to the same id string
-// and that EscrowDetailClient receives a non-empty string on first render.
-
-export default async function EscrowDetailPage({ params }: EscrowDetailPageProps) {
-  // ✅ Always await if params is a Promise
-  const resolvedParams = await params
-  const id = resolvedParams.id
+// NOTE: Next may pass params as a Promise. Explicitly accept a Promise here
+// and await it. This avoids the Next.js runtime warning and TypeScript build issues.
+export default async function EscrowDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  // Always await params (Next runtime may be async).
+  const resolved = await params
+  const id = resolved?.id
   if (!id) return notFound()
 
+  // server-side auth check
   const session = await auth()
   if (!session?.user?.id) return redirect("/auth/login")
 
+  // Fetch directly from DB on server (fast and avoids hitting protected /api)
   const escrow = await db.escrow.findUnique({
     where: { id },
     include: {
@@ -34,7 +35,9 @@ export default async function EscrowDetailPage({ params }: EscrowDetailPageProps
   if (!escrow) return notFound()
 
   const qc = getQueryClient()
-  // ✅ Use primitive key instead of object to avoid hydration mismatch
+
+  // IMPORTANT: use a primitive id in the key to avoid hydration mismatch.
+  // This must match the client queryKey exactly.
   qc.setQueryData(["escrow.byId", id], escrow)
 
   return (

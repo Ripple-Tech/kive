@@ -70,7 +70,7 @@ export async function prefetchEscrow(qc: QueryClient, id: string) {
 
   if (escrow) {
     // NOTE: client uses ["escrow.byId", { id }] as the key
-    qc.setQueryData(["escrow.byId", { id }], escrow);
+    qc.setQueryData(["escrow.byId",  id ], escrow);
   }
 }
 
