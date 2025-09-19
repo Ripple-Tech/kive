@@ -7,7 +7,7 @@ import { auth } from "@/auth"
 import { notFound, redirect } from "next/navigation"
 
 interface EscrowDetailPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default async function EscrowDetailPage({ params }: EscrowDetailPageProps) {
