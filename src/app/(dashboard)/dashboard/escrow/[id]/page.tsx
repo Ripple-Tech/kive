@@ -11,11 +11,13 @@ interface EscrowDetailPageProps {
 }
 
 export default async function EscrowDetailPage({ params }: EscrowDetailPageProps) {
-  const session = await auth()
-  if (!session?.user?.id) return redirect("/login")
+  
 
   const awaitedParams = await params
   const id = awaitedParams.id
+
+  const session = await auth()
+  if (!session?.user?.id) return redirect("/login")
 
   const escrow = await db.escrow.findUnique({
     where: { id: awaitedParams.id },
