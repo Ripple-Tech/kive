@@ -21,7 +21,7 @@ export function EscrowDetailClient({ id }: { id: string }) {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["escrow.byId", { id }], // ✅ matches prefetch
+    queryKey: ["escrow.byId", id], // ✅ matches prefetch
     queryFn: async () => {
       const res = await client.escrow.getById.$get({ id })
       const payload = await res.json()
@@ -49,8 +49,8 @@ export function EscrowDetailClient({ id }: { id: string }) {
         qc.invalidateQueries({ queryKey: ["escrow.listMine"] }),
       ])
 
-      refetch()
-      router.refresh()
+     // refetch()
+     // router.refresh()
     },
   })
 
