@@ -31,13 +31,13 @@ async function prefetchEscrows(qc: QueryClient, userId: string) {
 
 export default async function Page() {
   const user = await getCurrentUser()
-  if (!user) redirect("/login") // ✅ protection
+  if (!user) redirect("/auth/login")
 
   const qc = new QueryClient()
   const state = await prefetchEscrows(qc, user.id)
 
   return (
-    <DashboardPage title="Your Escrows" hideBackButton showCreate>
+    <DashboardPage title="Your Escrows"  hideBackButton showCreate>
       <Hydrate state={state}>
         <EscrowGridClient />
       </Hydrate>

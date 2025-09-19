@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic"  // ✅ auth page must be dynamic
 
 export default async function Page() {
   const user = await getCurrentUser()
-  if (!user) redirect("/login")  // ✅ your preference saved!
+  if (!user) redirect("/auth/login")  // ✅ your preference saved!
 
   const qc = new QueryClient()
   await prefetchDashboard(qc, user.id)  // pass user.id from server auth

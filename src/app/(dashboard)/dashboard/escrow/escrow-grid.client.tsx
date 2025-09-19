@@ -28,6 +28,8 @@ export function EscrowGridClient() {
     queryKey: ["escrow.listMine", { limit: 20 }],
     queryFn: fetchEscrows,
     staleTime: 30_000,
+     refetchOnMount: false,   // ✅ don’t fight hydration
+     refetchOnWindowFocus: false, // ✅ prevent unnecessary reloads
   })
 
   if (escrowsQuery.isLoading) {

@@ -17,7 +17,7 @@ export default async function EscrowDetailPage({ params }: EscrowDetailPageProps
   const id = awaitedParams.id
 
   const session = await auth()
-  if (!session?.user?.id) return redirect("/login")
+  if (!session?.user?.id) return redirect("/auth/login")
 
   const escrow = await db.escrow.findUnique({
     where: { id: awaitedParams.id },
@@ -35,7 +35,7 @@ export default async function EscrowDetailPage({ params }: EscrowDetailPageProps
   qc.setQueryData(["escrow.byId", { id: awaitedParams.id }], escrow)
 
   return (
-    <DashboardPage title="Escrow Details">
+    <DashboardPage title="Escrow Details" linkBackTo="/dashboard/escrow">
       <HydrationBoundary state={dehydrate(qc)}>
         <EscrowDetailClient id={awaitedParams.id} />
       </HydrationBoundary>

@@ -9,12 +9,14 @@ import { Modal } from "../ui/modal"
 import HeroForm from "../forms/heroform"
 import { useQuery } from "@tanstack/react-query"
 import { fetchCurrentUser } from "@/lib/fetchCurrentUser"
+import { LinkBackButton } from "./linkBackButton"
 
 interface DashboardPageProps {
   title?: string
   children?: ReactNode
   hideBackButton?: boolean
   showCreate?: boolean
+  linkBackTo?: string
   cta?: ReactNode
   isDashboard?: boolean
 }
@@ -23,6 +25,7 @@ export const DashboardPage = ({
   title,
   children,
   cta,
+  linkBackTo,
   hideBackButton,
   showCreate = false,
   isDashboard = false,
@@ -42,13 +45,23 @@ export const DashboardPage = ({
         {/* Left side */}
         <div className="flex items-center gap-4">
           {!isDashboard && !hideBackButton && (
-            <Button
-              onClick={() => router.push("/dashboard")}
-              className="w-fit bg-white"
-              variant="outline"
-            >
-              <ArrowLeft className="size-4" />
-            </Button>
+            linkBackTo ? (
+              <LinkBackButton href={linkBackTo} />
+            ) : (
+              <Button
+                onClick={() => {
+                  if (window.history.length > 1) {
+                    router.back()
+                  } else {
+                    router.push("/dashboard")
+                  }
+                }}
+                className="w-fit bg-white"
+                variant="outline"
+              >
+                <ArrowLeft className="size-4" />
+              </Button>
+            )
           )}
 
           {!isDashboard && <Heading>{title}</Heading>}
