@@ -9,7 +9,7 @@ import { Modal } from "../ui/modal"
 import HeroForm from "../forms/heroform"
 import { useQuery } from "@tanstack/react-query"
 import { fetchCurrentUser } from "@/lib/fetchCurrentUser"
-import { LinkBackButton } from "./linkBackButton"
+import { LinkBackButton } from "@/component/dashboard/LinkBackButton"
 
 interface DashboardPageProps {
   title?: string
